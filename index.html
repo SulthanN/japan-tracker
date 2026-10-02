@@ -263,14 +263,13 @@ select.cur{width:76px;text-align:center;font-weight:700}
     <label for="sRate">Kurs pasar: 1 ¥ = … Rp</label>
     <div class="ib"><input id="sRate" type="number" inputmode="decimal" step="0.01" min="0"><button class="btn ghost sm" id="fetchRate">Ambil kurs</button></div>
     <div class="sub" id="rateInfo" style="margin-top:4px"></div>
-    <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label for="sFeePct">Biaya kartu Visa (%)</label><input id="sFeePct" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
-      <div><label for="sFeeFix">Biaya tetap /transaksi (Rp)</label><input id="sFeeFix" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-    </div>
+    <label for="sFeePct">Biaya kartu (% di atas kurs pasar)</label>
+    <input id="sFeePct" type="number" inputmode="decimal" step="0.01" min="0" placeholder="2">
+    <input id="sFeeFix" type="hidden" value="0">
     <div class="sub" id="effInfo" style="margin-top:6px"></div>
     <label for="sRateCash">Kurs tunai (money changer): 1 ¥ = … Rp</label>
     <input id="sRateCash" type="number" inputmode="decimal" step="0.01" min="0">
-    <div class="note">Biaya kartu = biaya transaksi luar negeri bank penerbit + biaya admin per transaksi. Cek di aplikasi/situs bank Anda.</div>
+    <div class="note">Default 2% = perkiraan (rentang umum bank Indonesia 1–3%). Ditetapkan bank penerbit, bukan Visa — ganti bila tahu angka bank Anda atau setelah membandingkan dengan tagihan pertama.</div>
   </div>
   <div class="card">
     <div class="lbl">Anggaran</div>
@@ -356,13 +355,14 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); c
 function defaults(){
   return {settings:{budget:120000, rate:110, rateAt:null, start:today(),
     segs:[{city:'Fukuoka',days:3},{city:'Kansai',days:4},{city:'Fujikawaguchiko',days:1},{city:'Tokyo',days:4}],
-    limits:{}, cityW:{}, rateCash:110, feePct:0, feeFix:0, pools:{digital:{amt:120000,cur:'JPY'},cash:{amt:0,cur:'JPY'}}}, tx:[], plan:[], xfer:[]};
+    limits:{}, cityW:{}, rateCash:110, feePct:2, feeFix:0, feeVer:1, pools:{digital:{amt:120000,cur:'JPY'},cash:{amt:0,cur:'JPY'}}}, tx:[], plan:[], xfer:[]};
 }
 function load(){
   try{ const r=localStorage.getItem(KEY); if(r){ const d=JSON.parse(r); if(d&&d.settings&&Array.isArray(d.tx)){
     d.settings=Object.assign(defaults().settings,d.settings); d.plan=Array.isArray(d.plan)?d.plan:[]; d.xfer=Array.isArray(d.xfer)?d.xfer:[];
     if(!r.includes('"pools"')) d.settings.pools={digital:{amt:d.settings.budget,cur:'JPY'},cash:{amt:0,cur:'JPY'}};
-    if(!r.includes('"rateCash"')) d.settings.rateCash=d.settings.rate; return d; } } }catch(e){}
+    if(!r.includes('"rateCash"')) d.settings.rateCash=d.settings.rate;
+    if(!r.includes('"feeVer"')){ if(!(+d.settings.feePct>0)) d.settings.feePct=2; d.settings.feeFix=0; d.settings.feeVer=1; } return d; } } }catch(e){}
   return defaults();
 }
 let DB = load();
@@ -631,7 +631,7 @@ function renderList(){
 let segDraft=[];
 function renderSettings(){
   const s=DB.settings;
-  $('sRate').value=s.rate; $('sRateCash').value=cashRate(s); $('sFeePct').value=s.feePct||''; $('sFeeFix').value=s.feeFix||''; $('sStart').value=s.start;
+  $('sRate').value=s.rate; $('sRateCash').value=cashRate(s); $('sFeePct').value=s.feePct||''; $('sFeeFix').value=0; $('sStart').value=s.start;
   $('sDig').value=s.pools.digital.amt||''; $('sDigCur').value=s.pools.digital.cur; $('sCash').value=s.pools.cash.amt||''; $('sCashCur').value=s.pools.cash.cur;
   ['sRate','sRateCash','sFeePct','sFeeFix','sDig','sCash'].forEach(i=>$(i).oninput=budPreview);
   ['sDigCur','sCashCur'].forEach(i=>$(i).onchange=()=>curSwitch(i));
@@ -683,11 +683,28 @@ $('saveSet').onclick=()=>{
   Object.assign(DB.settings,d,{budget:b,start:st,segs,limits:lim,cityW:cw});
   if(persist()){ toast('Pengaturan disimpan'); renderSettings(); render(); }
 };
-let fetchedAt=null;
+/* Kurs pasar JPY→IDR: dicoba berurutan sampai satu berhasil (semua mengizinkan CORS) */
+const RATE_SRC=[
+  ['open.er-api.com','https://open.er-api.com/v6/latest/JPY',j=>j&&j.rates&&j.rates.IDR],
+  ['currency-api (jsDelivr)','https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/jpy.min.json',j=>j&&j.jpy&&j.jpy.idr],
+  ['currency-api (mirror)','https://latest.currency-api.pages.dev/v1/currencies/jpy.min.json',j=>j&&j.jpy&&j.jpy.idr],
+  ['frankfurter (ECB)','https://api.frankfurter.app/latest?from=JPY&to=IDR',j=>j&&j.rates&&j.rates.IDR]];
+async function getJson(url,ms){ const c=new AbortController(), t=setTimeout(()=>c.abort(),ms);
+  try{ const r=await fetch(url,{cache:'no-store',signal:c.signal}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
+  finally{ clearTimeout(t); } }
 $('fetchRate').onclick=async()=>{
-  try{ const r=await fetch('https://open.er-api.com/v6/latest/JPY',{cache:'no-store'}); const j=await r.json(), v=j&&j.rates&&j.rates.IDR;
-    if(!v) throw 0; const rv=Math.round(v*100)/100; $('sRate').value=rv; DB.settings.rateAt=Date.now(); fetchedAt=DB.settings.rateAt; budPreview(); toast('Kurs pasar: 1 ¥ = Rp'+rv+' — tekan Simpan untuk menerapkan');
-  }catch(e){ toast('Gagal ambil kurs (offline?) — isi manual'); }
+  const btn=$('fetchRate'); if(btn.disabled) return;
+  if(navigator.onLine===false){ $('rateInfo').innerHTML='<span class="bad">Tidak ada koneksi internet.</span>'; toast('Offline — isi kurs manual'); return; }
+  btn.disabled=true; btn.textContent='Mengambil…'; const errs=[];
+  for(const [name,url,pick] of RATE_SRC){
+    try{ const v=+pick(await getJson(url,7000)); if(!(v>0)) throw new Error('data kosong');
+      const rv=Math.round(v*100)/100; $('sRate').value=rv; DB.settings.rateAt=Date.now(); budPreview();
+      $('rateInfo').innerHTML='Diambil dari '+name+' · '+new Date().toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' — <b>tekan Simpan</b> untuk menerapkan';
+      toast('Kurs pasar: 1 ¥ = Rp'+rv); btn.disabled=false; btn.textContent='Ambil kurs'; return;
+    }catch(e){ errs.push(name+': '+(e.name==='AbortError'?'timeout':e.message)); }
+  }
+  $('rateInfo').innerHTML='<span class="bad">Gagal dari semua sumber.</span><br>'+errs.map(esc).join('<br>');
+  toast('Gagal ambil kurs — isi manual'); btn.disabled=false; btn.textContent='Ambil kurs';
 };
 
 // ================= ekspor / impor =================
