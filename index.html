@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1013">
+<meta name="color-scheme" content="dark">
+<title>Japan Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0e1013;--card:#171a1f;--card2:#1e2228;--ink:#eceef1;--ink2:#b9bec7;--mute:#858b95;--line:#2a2f37;--field:#20242b;
+  --acc:#8f9bff;--good:#0ca30c;--warn:#fab219;--bad:#e66767;
+  --c-makan:#3987e5;--c-transport:#d95926;--c-kebutuhan:#199e70;--c-jajan:#c98500;--c-gift:#d55181;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:env(safe-area-inset-top) 0 calc(78px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+header{padding:18px 16px 8px;display:flex;justify-content:space-between;align-items:baseline;max-width:560px;margin:0 auto}
+header h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+header span{color:var(--mute);font-size:13px}
+main{padding:0 16px;max-width:560px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.lbl{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.sub{color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.num{font-variant-numeric:tabular-nums;font-weight:600}
+.dual{margin-top:6px;font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.dual div{font-size:28px}
+.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.seg{display:flex;gap:2px;height:12px;background:var(--field);border-radius:6px;overflow:hidden;margin-top:12px;position:relative}
+.seg i{display:block;height:100%}
+.seg .mark{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:10px;font-size:13px}
+.legend div{display:flex;align-items:center;gap:6px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.legend b{font-weight:600;color:var(--ink);margin-left:auto}
+.sw{width:10px;height:10px;border-radius:3px;flex:none;display:inline-block}
+.bar{height:6px;background:var(--field);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--mute)}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-variant-numeric:tabular-nums}
+th{font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:4px 0 6px}
+th:first-child{text-align:left}
+td{padding:8px 0 8px 6px;border-top:1px solid var(--line);text-align:right;font-size:13.5px;vertical-align:top;line-height:1.3}
+td:first-child{text-align:left;padding-left:0;font-weight:600;white-space:nowrap}
+td .r{display:block}
+td.dyn{font-weight:700}
+.alert{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:8px;color:var(--ink2)}
+.alert .ic{font-weight:700;flex:none;width:16px;text-align:center}
+.proj{margin-top:12px;padding:10px 12px;background:var(--card2);border-radius:10px;font-size:13.5px;color:var(--ink2)}
+svg{display:block;width:100%;height:auto;margin-top:8px}
+#chartInfo{min-height:20px;font-size:13px;color:var(--ink2);margin-top:6px;font-variant-numeric:tabular-nums}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:12px;outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+#amt{font-size:28px;font-weight:700;text-align:right}
+.amtIdr{font-size:28px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:20px;padding:8px 13px;font:inherit;font-size:14px;display:flex;align-items:center;gap:6px}
+.chip.on{border-color:var(--acc);background:#2a2f4a}
+.btn{width:100%;border:0;border-radius:12px;padding:15px;font:inherit;font-weight:700;background:var(--acc);color:#0e1013;margin-top:16px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:600}
+.btn.sm{width:auto;padding:9px 14px;margin:0;font-size:14px}
+.segrow{display:grid;grid-template-columns:1fr 74px 40px;gap:8px;margin-top:8px}
+.segrow input,.segrow select{padding:10px}
+.x{background:none;border:1px solid var(--line);border-radius:10px;color:var(--mute);font:inherit}
+.limrow{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;margin-top:10px}
+.limrow input{padding:10px;text-align:right}
+.limrow span{display:flex;align-items:center;gap:8px}
+.cityrow{display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;align-items:center;margin-top:8px;font-size:13.5px}
+.cityrow input{padding:8px;text-align:right}
+.tx{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tx:last-child{border-bottom:0}
+.tx b{font-weight:600}
+.tx .del{background:none;border:0;color:var(--mute);font-size:13px;padding:2px 0 0}
+.day{font-size:12px;color:var(--mute);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.06em}
+.amtR{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.3}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--mute);font:inherit;font-size:12px;padding:10px 0 12px}
+nav button b{display:block;font-size:20px;line-height:1.2}
+nav button.on{color:var(--acc)}
+.page{display:none}.page.on{display:block}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+.empty{color:var(--mute);text-align:center;padding:16px 0}
+.note{font-size:12px;color:var(--mute);margin-top:8px}
+.chk{display:flex;gap:10px;align-items:flex-start;color:var(--ink);font-size:14px;margin-top:14px}
+.chk input{width:20px;height:20px;flex:none;margin-top:2px;accent-color:var(--acc)}
+</style>
+</head>
+<body>
+<header><h1>Japan Tracker</h1><span id="hdrDate"></span></header>
+<main>
+
+<section class="page on" id="p-dash">
+  <div class="card">
+    <div class="row"><div class="lbl">Sisa anggaran total</div><div class="sub" id="totDays"></div></div>
+    <div class="dual" id="totLeft"></div>
+    <div class="seg" id="totSeg"></div>
+    <div class="legend" id="totLeg"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl" id="tHead">Hari ini</div><div class="sub" id="tAllow"></div></div>
+    <div class="sub" style="margin-top:2px">Sisa jatah hari ini</div>
+    <div class="dual" id="tLeft"></div>
+    <div class="seg" id="tSeg"></div>
+    <div class="legend" id="tLeg"></div>
+    <div class="note" id="tNote"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl">Rekomendasi hari ini</div><div class="sub">dihitung awal hari</div></div>
+    <table id="recTbl"></table>
+    <div id="recAlerts"></div>
+    <div class="proj" id="proj"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl">Hari ke hari</div><div class="sub">ketuk batang</div></div>
+    <div id="chart"></div>
+    <div id="chartInfo"></div>
+    <div class="legend" style="grid-template-columns:repeat(3,auto);justify-content:start;gap:4px 16px">
+      <div><span class="sw" style="background:var(--ink2)"></span>Realisasi</div>
+      <div><span class="sw" style="background:transparent;border:1.5px solid var(--acc)"></span>Rek. dinamis</div>
+      <div><span class="sw" style="background:transparent;border-top:2px dashed var(--mute);border-radius:0;height:0"></span>Statis</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Per metode bayar</div>
+    <div id="methods"></div>
+  </div>
+</section>
+
+<section class="page" id="p-add">
+  <div class="card">
+    <label for="amt">Jumlah (¥)</label>
+    <input id="amt" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
+    <div class="amtIdr" id="amtIdr">Rp0</div>
+    <div class="sub" id="amtRate" style="text-align:right"></div>
+    <label>Kategori</label>
+    <div class="chips" id="catChips"></div>
+    <label>Metode bayar</label>
+    <div class="chips" id="methChips"></div>
+    <label for="note">Catatan</label>
+    <input id="note" type="text" placeholder="mis. ramen Ichiran, Hakata">
+    <label class="chk"><input type="checkbox" id="oneoff"> <span>Pengeluaran besar sekali bayar<br><span class="sub">mis. Shinkansen, tiket antarkota — tetap mengurangi anggaran, tapi tidak dihitung dalam tren</span></span></label>
+    <label for="dt">Waktu</label>
+    <input id="dt" type="datetime-local">
+    <button class="btn" id="saveBtn">Simpan</button>
+    <div class="note">Suica/PASMO: catat saat dipakai, bukan saat top-up — top-up hanya memindahkan uang.</div>
+  </div>
+</section>
+
+<section class="page" id="p-list"><div class="card" id="txList"></div></section>
+
+<section class="page" id="p-set">
+  <div class="card">
+    <div class="lbl">Anggaran & kurs</div>
+    <label for="sBudget">Total anggaran (¥)</label>
+    <input id="sBudget" type="number" inputmode="numeric" min="0">
+    <label for="sRate">Kurs: 1 ¥ = … Rp</label>
+    <input id="sRate" type="number" inputmode="decimal" step="0.01" min="0">
+    <div class="row" style="margin-top:8px"><span class="sub" id="rateInfo"></span><button class="btn ghost sm" id="fetchRate">Ambil kurs online</button></div>
+  </div>
+  <div class="card">
+    <div class="row"><div class="lbl">Itinerary</div><div class="sub" id="itinInfo"></div></div>
+    <label for="sStart">Tanggal mulai</label>
+    <input id="sStart" type="date">
+    <div id="segRows"></div>
+    <button class="btn ghost sm" id="addSeg" style="margin-top:10px">+ Kota</button>
+  </div>
+  <div class="card">
+    <div class="lbl">Bobot biaya kota (m)</div>
+    <div class="note">Acuan ¥/hari (makan + transport lokal + kebutuhan + jajan, gaya hemat–menengah) dari riset web. m = acuan kota ÷ acuan Tokyo; boleh diubah.</div>
+    <div id="cityRows"></div>
+  </div>
+  <div class="card">
+    <div class="row"><div class="lbl">Batas per kategori (¥)</div><div class="sub" id="limInfo"></div></div>
+    <div class="note">Kosong = tanpa batas (porsi mengikuti profil biaya kota). Gift = dana dicadangkan, bukan jatah harian.</div>
+    <div id="limFields"></div>
+    <button class="btn" id="saveSet">Simpan pengaturan</button>
+  </div>
+  <div class="card">
+    <div class="lbl">Data</div>
+    <div class="sub" id="dataInfo" style="margin-top:6px"></div>
+    <button class="btn ghost" id="expCsv">Ekspor CSV</button>
+    <button class="btn ghost" id="expJson">Ekspor JSON (backup lengkap)</button>
+    <button class="btn ghost" id="impJson">Impor JSON (restore)</button>
+    <input type="file" id="impFile" accept="application/json,.json" hidden>
+    <div class="note">Data hanya tersimpan di HP ini. Ekspor JSON secara rutin.</div>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-p="dash" class="on"><b>◎</b>Ringkas</button>
+  <button data-p="add"><b>＋</b>Catat</button>
+  <button data-p="list"><b>≡</b>Riwayat</button>
+  <button data-p="set"><b>⚙</b>Atur</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const CATS  = ['Makan','Transport','Kebutuhan','Jajan','Gift'];
+const DAILY = ['Makan','Transport','Kebutuhan','Jajan'];          // Gift = cadangan, bukan jatah harian
+const COLOR = {Makan:'var(--c-makan)',Transport:'var(--c-transport)',Kebutuhan:'var(--c-kebutuhan)',Jajan:'var(--c-jajan)',Gift:'var(--c-gift)'};
+const METHODS = ['Tunai','Suica/PASMO','Kartu','QR/E-money'];
+// Acuan biaya harian per kota (¥, hemat–menengah). Sumber: japantripcost.com, osakatourism.org,
+// thingstodoinfukuoka.com, japanactivity.com, japan-guide.com, japancheapo.com (riset Okt 2026).
+const CITY_DB = {
+  'Fukuoka':        {Makan:2400, Transport:640,  Kebutuhan:600, Jajan:700},
+  'Kansai':         {Makan:2700, Transport:900,  Kebutuhan:600, Jajan:800},
+  'Fujikawaguchiko':{Makan:3000, Transport:1500, Kebutuhan:600, Jajan:700},
+  'Tokyo':          {Makan:3000, Transport:900,  Kebutuhan:600, Jajan:800},
+  'Lainnya':        {Makan:3000, Transport:900,  Kebutuhan:600, Jajan:800}
+};
+const CITIES = Object.keys(CITY_DB);
+const ALPHA = 0.4;
+const KEY = 'jt_v3';
+const $ = id => document.getElementById(id);
+
+const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today = () => iso(new Date());
+const addDays = (s,n) => { const d=new Date(s+'T00:00'); d.setDate(d.getDate()+n); return iso(d); };
+const dayDiff = (a,b) => Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
+const fJ = n => (Math.round(n)<0?'−':'')+'¥'+Math.abs(Math.round(n)).toLocaleString('id-ID');
+const fR = n => (Math.round(n)<0?'−':'')+'Rp'+Math.abs(Math.round(n)).toLocaleString('id-ID');
+const sum = a => a.reduce((x,y)=>x+y,0);
+const esc = s => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const sw = k => '<span class="sw" style="background:'+COLOR[k]+'"></span>';
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),1800); }
+
+function defaults(){
+  return {settings:{budget:120000, rate:110, rateAt:null, start:today(),
+    segs:[{city:'Fukuoka',days:3},{city:'Kansai',days:4},{city:'Fujikawaguchiko',days:1},{city:'Tokyo',days:4}],
+    limits:{}, cityW:{}}, tx:[]};
+}
+function load(){
+  try{ const r=localStorage.getItem(KEY); if(r){ const d=JSON.parse(r); if(d&&d.settings&&Array.isArray(d.tx)){
+    d.settings=Object.assign(defaults().settings,d.settings); return d; } } }catch(e){}
+  return defaults();
+}
+let DB = load();
+function persist(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); return true; }catch(e){ toast('Gagal menyimpan: '+e.message); return false; } }
+if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+
+// ================= model =================
+const prof = c => CITY_DB[c]||CITY_DB.Lainnya;
+const refSum = c => sum(DAILY.map(k=>prof(c)[k]));
+const mDef = c => Math.round(refSum(c)/refSum('Tokyo')*100)/100;
+const mOf = c => { const w=DB.settings.cityW[c]; return w>0?w:mDef(c); };
+function days(){
+  const s=DB.settings, out=[]; let i=0;
+  s.segs.forEach(g=>{ for(let j=0;j<g.days;j++){ out.push({date:addDays(s.start,i),city:g.city,m:mOf(g.city)}); i++; } });
+  if(!out.length) out.push({date:s.start,city:'Lainnya',m:1});
+  return out;
+}
+const dayIdx = (D,date) => Math.min(D.length-1, Math.max(0, dayDiff(D[0].date,date)));
+function spentBy(f){ const t={}; CATS.forEach(k=>t[k]=0); DB.tx.filter(f).forEach(x=>t[x.category]=(t[x.category]||0)+x.amount_jpy); return t; }
+
+/* Rekomendasi dinamis pada awal hari t (data sebelum hari t saja):
+   Rg = max(G − S_gift, 0);  P = B − S − Rg
+   D_t = max(P,0)·m_t / Σ_{i≥t} m_i                      → sisa/kelebihan hari lalu otomatis tersebar
+   D_k,t = D_t·a_k/Σa;  a_k = max(L_k − S_k,0) (berbatas) | U·π_k(kota) (tanpa batas), U = max(P − Σ sisa batas, 0) */
+function recAt(D,t){
+  const s=DB.settings, B=s.budget, L=s.limits, ref=D[t].date;
+  const Sk=spentBy(x=>x.date<ref), S=sum(CATS.map(k=>Sk[k]));
+  const G=L.Gift||0, Rg=Math.max(G-Sk.Gift,0), P=B-S-Rg;
+  const sumM=sum(D.slice(t).map(d=>d.m));
+  const Dt=Math.max(P,0)*D[t].m/sumM;
+  const a={}, lim=DAILY.filter(k=>L[k]>0), unl=DAILY.filter(k=>!(L[k]>0));
+  lim.forEach(k=>a[k]=Math.max(L[k]-Sk[k],0));
+  const pc=prof(D[t].city), pcs=sum(unl.map(k=>pc[k])), U=Math.max(P-sum(lim.map(k=>a[k])),0);
+  unl.forEach(k=>a[k]=pcs?U*pc[k]/pcs:0);
+  let sa=sum(DAILY.map(k=>a[k]));
+  if(sa<=0){ DAILY.forEach(k=>a[k]=pc[k]); sa=sum(DAILY.map(k=>pc[k])); }
+  const Dk={}; DAILY.forEach(k=>Dk[k]=Dt*a[k]/sa);
+  return {Sk,S,G,Rg,P,sumM,Dt,Dk};
+}
+/* Statis: s = B/N; s_k = L_k/N (berbatas, termasuk Gift); tanpa batas: sisa anggaran/N dibagi profil rata-rata itinerary */
+function staticRec(D){
+  const s=DB.settings, N=D.length, L=s.limits, st={};
+  const limAll=CATS.filter(k=>L[k]>0), unl=DAILY.filter(k=>!(L[k]>0));
+  limAll.forEach(k=>st[k]=L[k]/N); if(!(L.Gift>0)) st.Gift=0;
+  const rest=Math.max(s.budget-sum(limAll.map(k=>L[k])),0)/N;
+  const pbar={}; unl.forEach(k=>pbar[k]=sum(D.map(d=>prof(d.city)[k])));
+  const ps=sum(unl.map(k=>pbar[k]));
+  unl.forEach(k=>st[k]=ps?rest*pbar[k]/ps:0);
+  return {total:s.budget/N, k:st};
+}
+/* Tren: EWMA (α=0,4) belanja harian non-Gift & non-sekali-bayar dari hari-hari penuh sebelum t, dinormalisasi bobot kota */
+function trend(D,t){
+  if(t<1) return null;
+  let r=null; const rk={};
+  for(let i=0;i<t;i++){
+    const x=spentBy(y=>y.date===D[i].date&&!y.oneoff), tot=sum(DAILY.map(k=>x[k]))/D[i].m;
+    r = r===null?tot:ALPHA*tot+(1-ALPHA)*r;
+    DAILY.forEach(k=>{ const v=x[k]/D[i].m; rk[k]=rk[k]===undefined?v:ALPHA*v+(1-ALPHA)*rk[k]; });
+  }
+  return {r,rk};
+}
+
+// ================= nav =================
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.p));
+function show(p){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  document.querySelectorAll('.page').forEach(s=>s.classList.toggle('on',s.id==='p-'+p));
+  if(p==='add'){ resetForm(); setTimeout(()=>$('amt').focus(),50); }
+  if(p==='set') renderSettings();
+  render(); window.scrollTo(0,0);
+}
+
+// ================= catat =================
+let selCat='Makan', selMeth='Tunai';
+function chips(el,list,get,set,dot){
+  el.innerHTML='';
+  list.forEach(v=>{ const b=document.createElement('button'); b.className='chip'+(v===get()?' on':'');
+    b.innerHTML=(dot?sw(v):'')+esc(v); b.onclick=()=>{ set(v); chips(el,list,get,set,dot); }; el.appendChild(b); });
+}
+function resetForm(){
+  selCat='Makan'; selMeth='Tunai';
+  $('amt').value=''; $('note').value=''; $('oneoff').checked=false; $('amtIdr').textContent='Rp0';
+  $('amtRate').textContent='kurs 1 ¥ = Rp'+DB.settings.rate;
+  const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); $('dt').value=d.toISOString().slice(0,16);
+  chips($('catChips'),CATS,()=>selCat,v=>selCat=v,true);
+  chips($('methChips'),METHODS,()=>selMeth,v=>selMeth=v,false);
+}
+$('amt').oninput=()=>{ $('amtIdr').textContent=fR((+$('amt').value||0)*DB.settings.rate); };
+$('saveBtn').onclick=()=>{
+  const amt=Math.round(+$('amt').value); if(!(amt>0)){ toast('Isi jumlah dulu'); return; }
+  const dt=$('dt').value||new Date().toISOString().slice(0,16);
+  DB.tx.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),dt,date:dt.slice(0,10),
+    amount_jpy:amt,fx_rate:DB.settings.rate,category:selCat,method:selMeth,note:$('note').value.trim(),oneoff:$('oneoff').checked});
+  if(persist()){ toast('Tersimpan · '+fJ(amt)); show('dash'); }
+};
+
+// ================= ringkas =================
+function render(){
+  const s=DB.settings, R=s.rate, D=days(), N=D.length, tn=today();
+  const t=dayIdx(D,tn), ref=D[t].date, rec=recAt(D,t), st=staticRec(D), tr=trend(D,t);
+  $('hdrDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+  const pre=tn<D[0].date, post=tn>D[N-1].date;
+  $('tHead').textContent=(pre?'Belum mulai · ':post?'Selesai · ':'')+'Hari '+(t+1)+'/'+N+' · '+D[t].city;
+
+  // hari ini
+  const xT=spentBy(x=>x.date===ref), spentT=sum(DAILY.map(k=>xT[k])), left=rec.Dt-spentT;
+  $('tAllow').textContent='jatah '+fJ(rec.Dt);
+  const cl=left<0?'bad':'';
+  $('tLeft').innerHTML='<div class="'+cl+'">'+fJ(left)+'</div><div class="'+cl+'">'+fR(left*R)+'</div>';
+  const scale=Math.max(rec.Dt,spentT)||1;
+  $('tSeg').innerHTML=DAILY.filter(k=>xT[k]>0).map(k=>'<i style="width:'+(xT[k]/scale*100)+'%;background:'+COLOR[k]+'"></i>').join('')+
+    (spentT>rec.Dt&&rec.Dt>0?'<span class="mark" style="left:calc('+(rec.Dt/scale*100)+'% - 1px)"></span>':'');
+  $('tLeg').innerHTML=DAILY.map(k=>'<div>'+sw(k)+k+'<b>'+(rec.Dt?Math.round(xT[k]/rec.Dt*100):0)+'%</b></div>').join('')+
+    '<div><span class="sw" style="background:var(--field);border:1px solid var(--line)"></span>Sisa<b class="'+cl+'">'+(rec.Dt?Math.round(left/rec.Dt*100):0)+'%</b></div>';
+  $('tNote').innerHTML=(xT.Gift?'Gift hari ini '+fJ(xT.Gift)+' diambil dari cadangan, bukan jatah harian. ':'')+
+    (spentT>rec.Dt?'Garis putih = batas jatah. Kelebihan otomatis mengurangi jatah hari berikutnya.':spentT>0?'Sisa hari ini otomatis menambah jatah hari berikutnya.':'');
+
+  // rekomendasi
+  const cell=(j,cls)=>'<td class="'+(cls||'')+'">'+fJ(j)+'<span class="r">'+fR(j*R)+'</span></td>';
+  let h='<tr><th>Kategori</th><th>Statis</th><th>Dinamis</th><th>Terpakai</th></tr>';
+  DAILY.forEach(k=>{ h+='<tr><td>'+sw(k)+' '+k+'</td>'+cell(st.k[k])+cell(rec.Dk[k],'dyn')+cell(xT[k],xT[k]>rec.Dk[k]+0.5?'bad':'')+'</tr>'; });
+  h+='<tr><td>'+sw('Gift')+' Gift</td>'+cell(st.k.Gift||0)+'<td class="dyn">cad. '+fJ(rec.Rg)+'<span class="r">'+fR(rec.Rg*R)+'</span></td>'+cell(xT.Gift)+'</tr>';
+  h+='<tr><td>Total</td>'+cell(st.total)+cell(rec.Dt,'dyn')+cell(spentT,spentT>rec.Dt+0.5?'bad':'')+'</tr>';
+  $('recTbl').innerHTML=h;
+  let al='';
+  if(tr) DAILY.forEach(k=>{ const est=tr.rk[k]*D[t].m;
+    if(rec.Dk[k]>0&&est>rec.Dk[k]*1.1) al+='<div class="alert"><span class="ic warn">▲</span><span><b>'+k+'</b>: tren '+fJ(est)+'/hari, di atas rekomendasi '+fJ(rec.Dk[k])+'</span></div>'; });
+  if(rec.P<0) al+='<div class="alert"><span class="ic bad">✕</span><span>Anggaran terlampaui '+fJ(-rec.P)+' (termasuk cadangan Gift).</span></div>';
+  $('recAlerts').innerHTML=al;
+  if(tr){ const proj=rec.S+tr.r*rec.sumM+rec.Rg, bal=s.budget-proj;
+    $('proj').innerHTML='Proyeksi bila tren berlanjut: '+(bal>=0?'<b class="good">✓ sisa '+fJ(bal)+'</b>':'<b class="bad">✕ defisit '+fJ(-bal)+'</b>')+
+      ' di akhir trip <span class="sub">('+fR(bal*R)+')</span>';
+  } else $('proj').innerHTML='Proyeksi tren muncul setelah 1 hari penuh tercatat.';
+
+  // total
+  const Sa=spentBy(()=>true), Stot=sum(CATS.map(k=>Sa[k])), rem=s.budget-Stot;
+  $('totDays').textContent=(N-t)+'/'+N+' hari tersisa';
+  $('totLeft').innerHTML='<div class="'+(rem<0?'bad':'')+'">'+fJ(rem)+'</div><div class="'+(rem<0?'bad':'')+'">'+fR(rem*R)+'</div>';
+  const sc2=Math.max(s.budget,Stot)||1;
+  $('totSeg').innerHTML=CATS.filter(k=>Sa[k]>0).map(k=>'<i style="width:'+(Sa[k]/sc2*100)+'%;background:'+COLOR[k]+'"></i>').join('');
+  $('totLeg').innerHTML=CATS.map(k=>'<div>'+sw(k)+k+'<b>'+(s.budget?Math.round(Sa[k]/s.budget*100):0)+'%</b></div>').join('')+
+    '<div><span class="sw" style="background:var(--field);border:1px solid var(--line)"></span>Sisa<b>'+(s.budget?Math.round(rem/s.budget*100):0)+'%</b></div>';
+
+  drawChart(D,t,rec,st);
+
+  // metode
+  const bm={}; DB.tx.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amount_jpy);
+  const ms=Object.entries(bm).sort((a,b)=>b[1]-a[1]);
+  $('methods').innerHTML=!ms.length?'<div class="empty">Belum ada transaksi</div>':ms.map(([k,v])=>
+    '<div style="margin-top:10px"><div class="row"><span>'+esc(k)+' <span class="sub">'+(Stot?Math.round(v/Stot*100):0)+'%</span></span><span class="num">'+fJ(v)+' · '+
+    fR(sum(DB.tx.filter(x=>x.method===k).map(x=>x.amount_jpy*x.fx_rate)))+'</span></div><div class="bar"><i style="width:'+(v/ms[0][1]*100)+'%"></i></div></div>').join('');
+
+  renderList();
+}
+
+function drawChart(D,t,rec,st){
+  const N=D.length, W=340, H=150, pl=4, pr=4, pt=8, pb=22, cw=(W-pl-pr)/N, bw=Math.max(4,cw-4);
+  const data=D.map((d,i)=>{
+    const x=spentBy(y=>y.date===d.date), act=sum(DAILY.map(k=>x[k]));
+    const r = i<=t ? recAt(D,i).Dt : Math.max(rec.P,0)*d.m/rec.sumM;   // ke depan = rencana bila patuh rekomendasi
+    return {d,i,act,rec:r};
+  });
+  const sLine=Math.max(st.total-(st.k.Gift||0),0);
+  const max=Math.max(1,sLine,...data.map(o=>Math.max(o.act,o.rec)))*1.1;
+  const y=v=>pt+(H-pt-pb)*(1-v/max);
+  let g='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--line)"/>';
+  let prev=D[0].city; D.forEach((d,i)=>{ if(d.city!==prev){ const x=pl+i*cw; g+='<line x1="'+x+'" x2="'+x+'" y1="'+pt+'" y2="'+y(0)+'" stroke="var(--line)" stroke-dasharray="2 3"/>'; prev=d.city; } });
+  g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(sLine)+'" y2="'+y(sLine)+'" stroke="var(--mute)" stroke-dasharray="4 3"/>';
+  data.forEach(o=>{
+    const x=pl+o.i*cw+(cw-bw)/2;
+    if(o.i<=t && o.act>0){ const top=y(o.act), r=Math.min(4,(y(0)-top)/2,bw/2);
+      g+='<path d="M'+x+' '+y(0)+'V'+(top+r)+'Q'+x+' '+top+' '+(x+r)+' '+top+'H'+(x+bw-r)+'Q'+(x+bw)+' '+top+' '+(x+bw)+' '+(top+r)+'V'+y(0)+'Z" fill="'+(o.act>o.rec+0.5?'var(--bad)':'var(--ink2)')+'"/>'; }
+    if(o.i>t) g+='<rect x="'+(x+0.75)+'" y="'+y(o.rec)+'" width="'+(bw-1.5)+'" height="'+Math.max(0,y(0)-y(o.rec))+'" rx="3" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-dasharray="3 2"/>';
+    else g+='<line x1="'+(x-1)+'" x2="'+(x+bw+1)+'" y1="'+y(o.rec)+'" y2="'+y(o.rec)+'" stroke="var(--acc)" stroke-width="2.5" stroke-linecap="round"/>';
+    g+='<text x="'+(x+bw/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" '+(o.i===t?'font-weight="700" fill="var(--ink)"':'fill="var(--mute)"')+'>'+(o.i+1)+'</text>';
+    g+='<rect class="hit" data-i="'+o.i+'" x="'+(pl+o.i*cw)+'" y="0" width="'+cw+'" height="'+H+'" fill="transparent"/>';
+  });
+  $('chart').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Pengeluaran harian vs rekomendasi">'+g+'</svg>';
+  const info=i=>{ const o=data[i]; $('chartInfo').innerHTML='<b>Hari '+(i+1)+' · '+o.d.city+'</b> ('+new Date(o.d.date+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})+') — '+
+    (i>t?'rencana '+fJ(o.rec):'realisasi '+fJ(o.act)+' / rek. '+fJ(o.rec))+' · statis '+fJ(sLine); };
+  $('chart').querySelectorAll('.hit').forEach(r=>{ r.onclick=()=>info(+r.dataset.i); r.onmouseenter=()=>info(+r.dataset.i); });
+  info(t);
+}
+
+// ================= riwayat =================
+function renderList(){
+  const tx=[...DB.tx].sort((a,b)=>b.dt.localeCompare(a.dt));
+  if(!tx.length){ $('txList').innerHTML='<div class="empty">Belum ada transaksi</div>'; return; }
+  const D=days(); let html='', last='';
+  tx.forEach(x=>{
+    if(x.date!==last){ last=x.date; const dd=DB.tx.filter(y=>y.date===x.date), i=dayDiff(D[0].date,x.date);
+      html+='<div class="day row"><span>'+new Date(x.date+'T00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})+((i>=0&&i<D.length)?' · '+D[i].city:'')+'</span><span>'+
+        fJ(sum(dd.map(y=>y.amount_jpy)))+' · '+fR(sum(dd.map(y=>y.amount_jpy*y.fx_rate)))+'</span></div>'; }
+    html+='<div class="tx"><div><b style="display:inline-flex;align-items:center;gap:6px">'+sw(x.category)+esc(x.category)+'</b> <span class="sub">· '+esc(x.method)+' · '+x.dt.slice(11,16)+(x.oneoff?' · sekali bayar':'')+'</span>'+
+      (x.note?'<div class="sub">'+esc(x.note)+'</div>':'')+'</div><div class="amtR"><div>'+fJ(x.amount_jpy)+'</div><div>'+fR(x.amount_jpy*x.fx_rate)+
+      '</div><button class="del" data-id="'+x.id+'">hapus</button></div></div>';
+  });
+  $('txList').innerHTML=html;
+  $('txList').querySelectorAll('.del').forEach(b=>b.onclick=()=>{
+    if(b.dataset.armed){ DB.tx=DB.tx.filter(x=>x.id!==b.dataset.id); persist(); render(); toast('Dihapus'); }
+    else{ b.dataset.armed=1; b.textContent='ketuk lagi untuk hapus'; b.style.color='var(--bad)'; }
+  });
+}
+
+// ================= atur =================
+let segDraft=[];
+function renderSettings(){
+  const s=DB.settings;
+  $('sBudget').value=s.budget; $('sRate').value=s.rate; $('sStart').value=s.start;
+  $('rateInfo').textContent=s.rateAt?('Diperbarui '+new Date(s.rateAt).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})):'Kurs manual';
+  segDraft=s.segs.map(g=>({...g})); drawSegs();
+  $('cityRows').innerHTML='<div class="cityrow sub"><span>Kota</span><span style="text-align:right">acuan/hari</span><span style="text-align:right">m</span></div>'+
+    CITIES.map(c=>'<div class="cityrow"><span>'+c+'</span><span class="num" style="text-align:right">'+fJ(refSum(c))+'</span><input type="number" step="0.01" min="0.1" inputmode="decimal" data-city="'+c+'" value="'+mOf(c)+'"></div>').join('');
+  $('limFields').innerHTML=CATS.map(k=>'<div class="limrow"><span>'+sw(k)+k+'</span><input type="number" inputmode="numeric" min="0" data-cat="'+k+'" placeholder="tanpa batas" value="'+(s.limits[k]||'')+'"></div>').join('');
+  $('limFields').querySelectorAll('input').forEach(i=>i.oninput=limInfo); $('sBudget').oninput=limInfo; limInfo();
+  $('dataInfo').textContent=DB.tx.length+' transaksi tersimpan';
+}
+function drawSegs(){
+  $('segRows').innerHTML=segDraft.map((g,i)=>'<div class="segrow"><select data-i="'+i+'">'+CITIES.map(c=>'<option'+(c===g.city?' selected':'')+'>'+c+'</option>').join('')+
+    '</select><input type="number" min="1" inputmode="numeric" data-i="'+i+'" value="'+g.days+'"><button class="x" data-i="'+i+'" aria-label="hapus">✕</button></div>').join('');
+  $('segRows').querySelectorAll('select').forEach(e=>e.onchange=()=>{ segDraft[+e.dataset.i].city=e.value; itinInfo(); });
+  $('segRows').querySelectorAll('input').forEach(e=>e.oninput=()=>{ segDraft[+e.dataset.i].days=Math.max(0,Math.round(+e.value)); itinInfo(); });
+  $('segRows').querySelectorAll('.x').forEach(e=>e.onclick=()=>{ segDraft.splice(+e.dataset.i,1); drawSegs(); });
+  itinInfo();
+}
+function itinInfo(){ const n=sum(segDraft.map(g=>g.days||0)), st=$('sStart').value||DB.settings.start;
+  $('itinInfo').textContent=n+' hari'+(n?' · s/d '+new Date(addDays(st,n-1)+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):''); }
+$('sStart').onchange=itinInfo;
+$('addSeg').onclick=()=>{ segDraft.push({city:'Tokyo',days:1}); drawSegs(); };
+function readLimits(){ const o={}; $('limFields').querySelectorAll('input').forEach(i=>{ const v=Math.round(+i.value); if(v>0) o[i.dataset.cat]=v; }); return o; }
+function limInfo(){ const sm=sum(Object.values(readLimits())), b=+$('sBudget').value||0;
+  $('limInfo').innerHTML=sm>b?'<span class="bad">lebih '+fJ(sm-b)+'</span>':'belum dialokasikan '+fJ(b-sm); }
+$('saveSet').onclick=()=>{
+  const b=+$('sBudget').value, r=+$('sRate').value, st=$('sStart').value, segs=segDraft.filter(g=>g.days>0);
+  if(!(b>0)||!(r>0)||!st){ toast('Lengkapi anggaran, kurs, tanggal'); return; }
+  if(!segs.length){ toast('Itinerary minimal 1 kota'); return; }
+  const lim=readLimits(); if(sum(Object.values(lim))>b){ toast('Jumlah batas melebihi total anggaran'); return; }
+  const cw={}; $('cityRows').querySelectorAll('input').forEach(i=>{ const v=+i.value; if(v>0&&Math.abs(v-mDef(i.dataset.city))>0.001) cw[i.dataset.city]=v; });
+  if(r!==DB.settings.rate) DB.settings.rateAt=null;
+  Object.assign(DB.settings,{budget:Math.round(b),rate:r,start:st,segs,limits:lim,cityW:cw});
+  if(persist()){ toast('Pengaturan disimpan'); renderSettings(); render(); }
+};
+$('fetchRate').onclick=async()=>{
+  try{ const r=await fetch('https://open.er-api.com/v6/latest/JPY',{cache:'no-store'}); const j=await r.json(), v=j&&j.rates&&j.rates.IDR;
+    if(!v) throw 0; DB.settings.rate=Math.round(v*100)/100; DB.settings.rateAt=Date.now(); persist(); renderSettings(); render(); toast('Kurs: 1 ¥ = Rp'+DB.settings.rate);
+  }catch(e){ toast('Gagal ambil kurs (offline?) — isi manual'); }
+};
+
+// ================= ekspor / impor =================
+function download(name,mime,text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:mime})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); }
+$('expCsv').onclick=()=>{
+  const D=days(), q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const rows=[['transaction_datetime','transaction_date','city','category','payment_method','amount_jpy','fx_rate_idr_per_jpy','amount_idr','note','one_off']];
+  [...DB.tx].sort((a,b)=>a.dt.localeCompare(b.dt)).forEach(x=>{ const i=dayDiff(D[0].date,x.date);
+    rows.push([x.dt,x.date,(i>=0&&i<D.length)?D[i].city:'',x.category,x.method,x.amount_jpy,x.fx_rate,Math.round(x.amount_jpy*x.fx_rate),x.note,x.oneoff?1:0]); });
+  download('japan_tx_'+today()+'.csv','text/csv',rows.map(r=>r.map(q).join(',')).join('\n'));
+};
+$('expJson').onclick=()=>download('japan_backup_'+today()+'.json','application/json',JSON.stringify(DB,null,1));
+$('impJson').onclick=()=>$('impFile').click();
+$('impFile').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ const d=JSON.parse(await f.text()); if(!d.settings||!Array.isArray(d.tx)) throw new Error('format salah');
+    const wasEmpty=!DB.tx.length, ids=new Set(DB.tx.map(x=>x.id)); let n=0;
+    d.tx.forEach(x=>{ if(!ids.has(x.id)){ DB.tx.push(x); n++; } });
+    if(wasEmpty) DB.settings=Object.assign(defaults().settings,d.settings);
+    persist(); renderSettings(); render(); toast(n+' transaksi diimpor');
+  }catch(err){ toast('Impor gagal: '+err.message); }
+  e.target.value='';
+};
+
+resetForm(); render();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
