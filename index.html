@@ -55,6 +55,14 @@ td.pl{color:var(--acc);font-weight:600}
 .rc .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600}
 .rc .rh .sub{font-weight:400;text-align:right}
 .nums b.pl{color:var(--acc)}
+.used{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.used b{font-size:18px}
+.crow{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;font-variant-numeric:tabular-nums}
+.crow:first-child{border-top:0}
+.crow .nm{display:flex;align-items:center;gap:6px;color:var(--ink2)}
+.crow .v{text-align:right;font-weight:600;line-height:1.3}
+.crow .v span{display:block;font-weight:400;color:var(--ink2);font-size:12.5px}
+.crow .pc{width:40px;text-align:right;color:var(--mute);font-size:12.5px}
 .alert{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:8px;color:var(--ink2)}
 .alert .ic{font-weight:700;flex:none;width:16px;text-align:center}
 .proj{margin-top:12px;padding:10px 12px;background:var(--card2);border-radius:10px;font-size:13.5px;color:var(--ink2)}
@@ -83,7 +91,7 @@ input:focus,select:focus{border-color:var(--acc)}
 .tx{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
 .tx:last-child{border-bottom:0}
 .tx b{font-weight:600}
-.tx .del{background:none;border:0;color:var(--mute);font-size:13px;padding:2px 0 0}
+.tx .del,.xf .del{background:none;border:0;color:var(--mute);font-size:13px;padding:2px 0 0}
 .day{font-size:12px;color:var(--mute);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.06em}
 .amtR{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.3}
 nav{position:fixed;z-index:5;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
@@ -155,8 +163,10 @@ select.cur{width:76px;text-align:center;font-weight:700}
   <div class="card">
     <div class="row"><div class="lbl">Sisa anggaran total</div><div class="sub" id="totDays"></div></div>
     <div class="dual" id="totLeft"></div>
+    <div class="used" id="totUsed"></div>
     <div class="seg" id="totSeg"></div>
     <div class="legend" id="totLeg"></div>
+    <div class="note" id="totNote"></div>
   </div>
 
   <div class="card">
@@ -198,7 +208,8 @@ select.cur{width:76px;text-align:center;font-weight:700}
   </div>
 
   <div class="card">
-    <div class="row"><div class="lbl">Saldo per pos</div><button class="btn ghost sm" id="topupBtn">Top-up Suica</button></div>
+    <div class="lbl">Saldo per pos</div>
+    <div class="chips" style="margin-top:8px"><button class="btn ghost sm" id="topupBtn">⇄ Top-up Suica</button><button class="btn ghost sm" id="atmBtn">⇄ Tarik ATM</button><button class="btn ghost sm" id="inBtn">＋ Dana masuk</button></div>
     <div id="pools"></div>
   </div>
 </section>
@@ -221,6 +232,7 @@ select.cur{width:76px;text-align:center;font-weight:700}
     <label for="note">Catatan</label>
     <input id="note" type="text" placeholder="mis. ramen Ichiran, Hakata">
     <label class="chk"><input type="checkbox" id="oneoff"> <span>Pengeluaran besar sekali bayar<br><span class="sub">mis. Shinkansen, tiket antarkota — tetap mengurangi anggaran, tapi tidak dihitung dalam tren</span></span></label>
+    <label class="chk"><input type="checkbox" id="sav"> <span>Dibayar dari tabungan<br><span class="sub">Tetap tercatat, tapi tidak memotong anggaran perjalanan maupun saldo pos</span></span></label>
     <label for="dt">Waktu</label>
     <input id="dt" type="datetime-local">
     <button class="btn" id="saveBtn">Simpan</button>
@@ -259,6 +271,27 @@ select.cur{width:76px;text-align:center;font-weight:700}
   <label for="xDt">Waktu</label><input id="xDt" type="datetime-local">
   <div class="note">Top-up hanya memindahkan uang dari pos tunai ke Suica — bukan pengeluaran. Pengeluaran dicatat saat Suica dipakai.</div>
   <button class="btn" id="xSave">Simpan top-up</button>
+</div></div>
+
+<div class="sheet" id="msheet"><div class="box">
+  <div class="row"><div class="lbl" id="mTitle"></div><button class="btn ghost sm" id="mClose">Tutup</button></div>
+  <div id="mAtm">
+    <label for="mAmt">Jumlah ditarik (¥)</label><input id="mAmt" type="number" inputmode="numeric" min="0" placeholder="mis. 20000">
+    <div class="grid2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label for="mFeeJ">Biaya ATM Jepang (¥)</label><input id="mFeeJ" type="number" inputmode="numeric" min="0" placeholder="0 (umum 110–220)"></div>
+      <div><label for="mFeeR">Biaya bank Indonesia (Rp)</label><input id="mFeeR" type="number" inputmode="numeric" min="0" placeholder="0 (mis. 20000)"></div>
+    </div>
+    <div class="note">Pilih <b>yen</b> bila ATM menawarkan konversi ke IDR (DCC). Biaya dicatat otomatis sebagai pengeluaran Kebutuhan (sekali bayar).</div>
+  </div>
+  <div id="mIn">
+    <label for="mInAmt">Jumlah</label>
+    <div class="ib"><input id="mInAmt" type="number" inputmode="decimal" min="0"><select id="mInCur" class="cur"><option value="JPY">¥</option><option value="IDR">Rp</option></select></div>
+    <label>Masuk ke pos</label><div class="chips" id="mInPool"></div>
+    <label for="mInNote">Sumber / catatan</label><input id="mInNote" type="text" placeholder="mis. kiriman keluarga, refund">
+  </div>
+  <div class="proj" id="mInfo"></div>
+  <label for="mDt">Waktu</label><input id="mDt" type="datetime-local">
+  <button class="btn" id="mSave">Simpan</button>
 </div></div>
 
 <section class="page" id="p-list"><div class="card" id="txList"></div></section>
@@ -361,11 +394,11 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); c
 function defaults(){
   return {settings:{budget:120000, rate:110, rateAt:null, start:today(),
     segs:[{city:'Fukuoka',days:3},{city:'Kansai',days:4},{city:'Fujikawaguchiko',days:1},{city:'Tokyo',days:4}],
-    limits:{}, cityW:{}, rateCash:110, feePct:2, feeFix:0, feeVer:1, pools:{digital:{amt:120000,cur:'JPY'},cash:{amt:0,cur:'JPY'}}}, tx:[], plan:[], xfer:[]};
+    limits:{}, cityW:{}, rateCash:110, feePct:2, feeFix:0, feeVer:1, pools:{digital:{amt:120000,cur:'JPY'},cash:{amt:0,cur:'JPY'}}}, tx:[], plan:[], xfer:[], inflow:[]};
 }
 function load(){
   try{ const r=localStorage.getItem(KEY); if(r){ const d=JSON.parse(r); if(d&&d.settings&&Array.isArray(d.tx)){
-    d.settings=Object.assign(defaults().settings,d.settings); d.plan=Array.isArray(d.plan)?d.plan:[]; d.xfer=Array.isArray(d.xfer)?d.xfer:[];
+    d.settings=Object.assign(defaults().settings,d.settings); d.plan=Array.isArray(d.plan)?d.plan:[]; d.xfer=Array.isArray(d.xfer)?d.xfer:[]; d.inflow=Array.isArray(d.inflow)?d.inflow:[];
     if(!r.includes('"pools"')) d.settings.pools={digital:{amt:d.settings.budget,cur:'JPY'},cash:{amt:0,cur:'JPY'}};
     if(!r.includes('"rateCash"')) d.settings.rateCash=d.settings.rate;
     if(!r.includes('"feeVer"')){ if(!(+d.settings.feePct>0)) d.settings.feePct=2; d.settings.feeFix=0; d.settings.feeVer=1; } return d; } } }catch(e){}
@@ -397,10 +430,22 @@ const fxTable=()=>DB.settings.fx||{rates:{},at:null,src:''};
 const effRate = s => s.rate*(1+(+s.feePct||0)/100);                // kurs kartu: pasar × (1 + biaya %)
 const cashRate = s => s.rateCash>0?s.rateCash:s.rate;
 const poolOf = m => m==='Tunai'?'cash':(m==='Suica/PASMO'?'suica':'digital');
-const rateFor = (s,m) => poolOf(m)==='digital'?effRate(s):cashRate(s);
+const rateFor = (s,m) => poolOf(m)==='digital'?effRate(s):cashRateEff(s);
 const poolJPY = (p,r) => !p?0:(p.cur==='JPY'?+p.amt||0:(r>0?(+p.amt||0)/r:0));
 const budgetOf = s => Math.round(poolJPY(s.pools.digital,effRate(s))+poolJPY(s.pools.cash,cashRate(s)));
-function spentBy(f){ const t={}; CATS.forEach(k=>t[k]=0); DB.tx.filter(f).forEach(x=>t[x.category]=(t[x.category]||0)+cost(x)); return t; }
+/* Aliran dana: xfer.to==='suica' (tunai→Suica), xfer.to==='cash' (ATM: digital→tunai); inflow = dana masuk */
+const isSuicaX = x => (x.to||'suica')==='suica';
+const atmX = () => DB.xfer.filter(x=>x.to==='cash');
+const inflowJPY = pool => sum(DB.inflow.filter(x=>!pool||x.pool===pool).map(x=>x.amount_jpy));
+const totB = () => DB.settings.budget + inflowJPY();                   // anggaran efektif = awal + dana masuk
+const budgetTx = () => DB.tx.filter(x=>!x.sav);                        // transaksi "dari tabungan" di luar anggaran
+/* Kurs tunai efektif = rata-rata tertimbang: (¥ awal·kurs MC + Σ ATM ¥·kurs kartu + Σ dana masuk tunai ¥·kurs) / Σ ¥ */
+function cashRateEff(s){ const iC=poolJPY(s.pools.cash,cashRate(s));
+  let num=iC*cashRate(s), den=iC;
+  atmX().forEach(x=>{ num+=x.amount_jpy*(x.rate||effRate(s)); den+=x.amount_jpy; });
+  DB.inflow.filter(x=>x.pool==='cash').forEach(x=>{ num+=x.amount_jpy*(x.rate||s.rate); den+=x.amount_jpy; });
+  return den>0?num/den:cashRate(s); }
+function spentBy(f){ const t={}; CATS.forEach(k=>t[k]=0); budgetTx().filter(f).forEach(x=>t[x.category]=(t[x.category]||0)+cost(x)); return t; }
 
 /* Rekomendasi dinamis pada awal hari t (data sebelum hari t saja):
    Rg = max(G − S_gift, 0);  P = B − S − Rg
@@ -412,7 +457,7 @@ function spentBy(f){ const t={}; CATS.forEach(k=>t[k]=0); DB.tx.filter(f).forEac
    D'_k,t = max(P',0)·m_t/Σm · a_k/Σa  +  Σ item hari t kategori k     (a_k berbatas = max(L_k − S_k − Pk_k, 0)) */
 const planCounts=(it,ref)=>it.count&&it.price>0&&(!it.done||!it.doneDate||it.doneDate>=ref);
 function recCore(D,t,withPlan){
-  const s=DB.settings, B=s.budget, L=s.limits, ref=D[t].date;
+  const s=DB.settings, B=totB(), L=s.limits, ref=D[t].date;
   const Sk=spentBy(x=>x.date<ref), S=sum(CATS.map(k=>Sk[k]));
   const Pk={}, Tk={}; CATS.forEach(k=>{Pk[k]=0;Tk[k]=0;});
   if(withPlan) DB.plan.filter(it=>planCounts(it,ref)).forEach(it=>{ Pk[it.category]+=it.price; if(it.day===t) Tk[it.category]+=it.price; });
@@ -436,11 +481,11 @@ function staticRec(D){
   const s=DB.settings, N=D.length, L=s.limits, st={};
   const limAll=CATS.filter(k=>L[k]>0), unl=DAILY.filter(k=>!(L[k]>0));
   limAll.forEach(k=>st[k]=L[k]/N); if(!(L.Gift>0)) st.Gift=0;
-  const rest=Math.max(s.budget-sum(limAll.map(k=>L[k])),0)/N;
+  const rest=Math.max(totB()-sum(limAll.map(k=>L[k])),0)/N;
   const pbar={}; unl.forEach(k=>pbar[k]=sum(D.map(d=>prof(d.city)[k])));
   const ps=sum(unl.map(k=>pbar[k]));
   unl.forEach(k=>st[k]=ps?rest*pbar[k]/ps:0);
-  return {total:s.budget/N, k:st};
+  return {total:totB()/N, k:st};
 }
 /* Tren: EWMA (α=0,4) belanja harian non-Gift & non-sekali-bayar dari hari-hari penuh sebelum t, dinormalisasi bobot kota */
 function trend(D,t){
@@ -476,7 +521,7 @@ function chips(el,list,get,set,dot){
 }
 function resetForm(){
   selCat='Makan'; selMeth='Tunai'; selCur='JPY'; $('amtCur').value='JPY'; fxPrefill();
-  $('amt').value=''; $('note').value=''; $('oneoff').checked=false; $('amtIdr').textContent='Rp0';
+  $('amt').value=''; $('note').value=''; $('oneoff').checked=false; $('sav').checked=false; $('amtIdr').textContent='Rp0';
   updAmt();
   const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); $('dt').value=d.toISOString().slice(0,16);
   chips($('catChips'),CATS,()=>selCat,v=>selCat=v,true);
@@ -520,7 +565,7 @@ $('saveBtn').onclick=()=>{
   const amt=selCur==='JPY'?Math.round(raw):Math.round(raw/cpj*100)/100;
   const dt=$('dt').value||new Date().toISOString().slice(0,16);
   DB.tx.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),dt,date:dt.slice(0,10),
-    amount_jpy:amt,fx_rate:txRate(selCur,selMeth),fee_jpy:0,orig_amt:selCur==='JPY'?null:raw,orig_cur:selCur==='JPY'?null:selCur,category:selCat,method:selMeth,note:$('note').value.trim(),oneoff:$('oneoff').checked});
+    amount_jpy:amt,fx_rate:txRate(selCur,selMeth),fee_jpy:0,orig_amt:selCur==='JPY'?null:raw,orig_cur:selCur==='JPY'?null:selCur,category:selCat,method:selMeth,note:$('note').value.trim(),oneoff:$('oneoff').checked,sav:$('sav').checked});
   const txid=DB.tx[DB.tx.length-1].id;
   if(pendingPlan){ const it=DB.plan.find(x=>x.id===pendingPlan); if(it){ it.done=true; it.doneDate=dt.slice(0,10); it.txId=txid; } }
   const back=pendingPlan?'plan':'dash'; pendingPlan=null;
@@ -566,41 +611,47 @@ function render(){
     if(rec.Dk[k]>0&&est>rec.Dk[k]*1.1) al+='<div class="alert"><span class="ic warn">▲</span><span><b>'+k+'</b>: tren '+fJ(est)+'/hari, di atas rekomendasi '+fJ(rec.Dk[k])+'</span></div>'; });
   if(rec.P<0) al+='<div class="alert"><span class="ic bad">✕</span><span>Anggaran terlampaui '+fJ(-rec.P)+' (termasuk cadangan Gift).</span></div>';
   $('recAlerts').innerHTML=al;
-  if(tr){ const proj=rec.S+tr.r*rec.sumM+rec.Rg, bal=s.budget-proj;
+  if(tr){ const proj=rec.S+tr.r*rec.sumM+rec.Rg, bal=totB()-proj;
     $('proj').innerHTML='Proyeksi bila tren berlanjut: '+(bal>=0?'<b class="good">✓ sisa '+fJ(bal)+'</b>':'<b class="bad">✕ defisit '+fJ(-bal)+'</b>')+
       ' di akhir trip <span class="sub">('+fR(bal*R)+')</span>';
   } else $('proj').innerHTML='Proyeksi tren muncul setelah 1 hari penuh tercatat.';
 
   // total
-  const Sa=spentBy(()=>true), Stot=sum(CATS.map(k=>Sa[k])), rem=s.budget-Stot;
+  const B=totB(), Sa=spentBy(()=>true), Stot=sum(CATS.map(k=>Sa[k])), rem=B-Stot;
   $('totDays').textContent=(N-t)+'/'+N+' hari tersisa';
   $('totLeft').innerHTML='<div class="'+(rem<0?'bad':'')+'">'+fJ(rem)+'</div><div class="'+(rem<0?'bad':'')+'">'+fR(rem*R)+'</div>';
-  const sc2=Math.max(s.budget,Stot)||1;
+  const sc2=Math.max(B,Stot)||1;
   $('totSeg').innerHTML=CATS.filter(k=>Sa[k]>0).map(k=>'<i style="width:'+(Sa[k]/sc2*100)+'%;background:'+COLOR[k]+'"></i>').join('');
-  $('totLeg').innerHTML=CATS.map(k=>'<div>'+sw(k)+k+'<b>'+(s.budget?Math.round(Sa[k]/s.budget*100):0)+'%</b></div>').join('')+
-    '<div><span class="sw" style="background:var(--field);border:1px solid var(--line)"></span>Sisa<b>'+(s.budget?Math.round(rem/s.budget*100):0)+'%</b></div>';
+  const SaR={}; CATS.forEach(k=>SaR[k]=sum(budgetTx().filter(x=>x.category===k).map(x=>cost(x)*x.fx_rate)));
+  const StotR=sum(CATS.map(k=>SaR[k]));
+  $('totUsed').innerHTML='<span class="sub">Total terpakai'+(B?' ('+Math.round(Stot/B*100)+'%)':'')+'</span><span style="text-align:right"><b>'+fJ(Stot)+'</b><br><span class="sub">'+fR(StotR)+'</span></span>';
+  $('totLeg').className='';
+  $('totLeg').innerHTML=CATS.map(k=>'<div class="crow"><span class="nm">'+sw(k)+k+'</span><span class="v">'+fJ(Sa[k])+'<span>'+fR(SaR[k])+'</span></span><span class="pc">'+(B?Math.round(Sa[k]/B*100):0)+'%</span></div>').join('');
+  const inT=inflowJPY(), savT=sum(DB.tx.filter(x=>x.sav).map(cost)), savR=sum(DB.tx.filter(x=>x.sav).map(x=>cost(x)*x.fx_rate));
+  $('totNote').innerHTML=(inT?'Termasuk dana masuk '+fJ(inT)+'. ':'')+(savT?'Dibayar dari tabungan (di luar anggaran): '+fJ(savT)+' · '+fR(savR)+'.':'');
 
   drawChart(D,t,rec,st);
 
   // metode
-  const bm={}; DB.tx.forEach(x=>bm[x.method]=(bm[x.method]||0)+cost(x));
+  const bm={}; budgetTx().forEach(x=>bm[x.method]=(bm[x.method]||0)+cost(x));
   const ms=Object.entries(bm).sort((a,b)=>b[1]-a[1]);
   $('methods').innerHTML=!ms.length?'<div class="empty">Belum ada transaksi</div>':ms.map(([k,v])=>
     '<div style="margin-top:10px"><div class="row"><span>'+esc(k)+' <span class="sub">'+(Stot?Math.round(v/Stot*100):0)+'%</span></span><span class="num">'+fJ(v)+' · '+
-    fR(sum(DB.tx.filter(x=>x.method===k).map(x=>cost(x)*x.fx_rate)))+'</span></div><div class="bar"><i style="width:'+(v/ms[0][1]*100)+'%"></i></div></div>').join('');
+    fR(sum(budgetTx().filter(x=>x.method===k).map(x=>cost(x)*x.fx_rate)))+'</span></div><div class="bar"><i style="width:'+(v/ms[0][1]*100)+'%"></i></div></div>').join('');
 
   renderPools();
   renderList();
 }
 function renderPools(){
-  const s=DB.settings, e=effRate(s), c=cashRate(s), use={cash:0,suica:0,digital:0}; let fee=0;
-  DB.tx.forEach(x=>{ use[poolOf(x.method)]+=cost(x); if(x.fee_jpy) fee+=x.fee_jpy; });
-  const top=sum(DB.xfer.map(x=>x.amount_jpy));
-  const iC=poolJPY(s.pools.cash,c), iD=poolJPY(s.pools.digital,e);
+  const s=DB.settings, e=effRate(s), cE=cashRateEff(s), use={cash:0,suica:0,digital:0}; let fee=0;
+  budgetTx().forEach(x=>{ use[poolOf(x.method)]+=cost(x); if(x.fee_jpy) fee+=x.fee_jpy; });
+  const top=sum(DB.xfer.filter(isSuicaX).map(x=>x.amount_jpy)), atm=sum(atmX().map(x=>x.amount_jpy));
+  const inC=inflowJPY('cash'), inD=inflowJPY('digital');
+  const iC=poolJPY(s.pools.cash,cashRate(s)), iD=poolJPY(s.pools.digital,e);
   const rows=[
-    {n:'Tunai',init:iC,rem:iC-use.cash-top,r:c,sub:'awal '+fJ(iC)+' · terpakai '+fJ(use.cash)+' · ke Suica '+fJ(top)},
-    {n:'Suica',init:top,rem:top-use.suica,r:c,sub:'top-up '+fJ(top)+' · terpakai '+fJ(use.suica)},
-    {n:'Digital',init:iD,rem:iD-use.digital,r:e,sub:'awal '+fJ(iD)+' · terpakai '+fJ(use.digital)+(fee?' (incl. biaya kartu '+fJ(fee)+')':'')}];
+    {n:'Tunai',init:iC+atm+inC,rem:iC+atm+inC-use.cash-top,r:cE,sub:'awal '+fJ(iC)+(atm?' · dari ATM '+fJ(atm):'')+(inC?' · dana masuk '+fJ(inC):'')+' · terpakai '+fJ(use.cash)+' · ke Suica '+fJ(top)+(atm||inC?' · kurs rata² Rp'+(Math.round(cE*100)/100):'')},
+    {n:'Suica',init:top,rem:top-use.suica,r:cE,sub:'top-up '+fJ(top)+' · terpakai '+fJ(use.suica)},
+    {n:'Digital',init:iD+inD,rem:iD+inD-use.digital-atm,r:e,sub:'awal '+fJ(iD)+(inD?' · dana masuk '+fJ(inD):'')+' · terpakai '+fJ(use.digital)+(atm?' · tarik ATM '+fJ(atm):'')+(fee?' (incl. biaya kartu '+fJ(fee)+')':'')}];
   $('pools').innerHTML=rows.map(o=>{ const p=o.init>0?Math.min(100,(o.init-o.rem)/o.init*100):0, bad=o.rem<-0.5;
     return '<div class="pool"><div class="row"><b>'+o.n+'</b><span class="num'+(bad?' bad':'')+'">'+fJ(o.rem)+' · '+fR(o.rem*o.r)+'</span></div>'+
       '<div class="bar"><i style="width:'+p+'%;background:'+(bad?'var(--bad)':'var(--mute)')+'"></i></div><div class="sub" style="margin-top:4px">'+o.sub+'</div>'+
@@ -611,11 +662,41 @@ $('topupBtn').onclick=()=>{ $('xAmt').value=''; $('xInfo').textContent='';
   $('xsheet').classList.add('on'); setTimeout(()=>$('xAmt').focus(),50); };
 $('xClose').onclick=()=>$('xsheet').classList.remove('on');
 $('xsheet').onclick=e=>{ if(e.target.id==='xsheet') $('xsheet').classList.remove('on'); };
-$('xAmt').oninput=()=>{ const v=+$('xAmt').value||0; $('xInfo').textContent=v?fR(v*cashRate(DB.settings))+' dari pos tunai':''; };
+$('xAmt').oninput=()=>{ const v=+$('xAmt').value||0; $('xInfo').textContent=v?fR(v*cashRateEff(DB.settings))+' dari pos tunai':''; };
 $('xSave').onclick=()=>{ const v=Math.round(+$('xAmt').value); if(!(v>0)){ toast('Isi jumlah'); return; }
   const dt=$('xDt').value||new Date().toISOString().slice(0,16);
   DB.xfer.push({id:'x'+Date.now().toString(36),dt,date:dt.slice(0,10),amount_jpy:v,from:'cash',to:'suica'});
   if(persist()){ $('xsheet').classList.remove('on'); toast('Top-up Suica '+fJ(v)); render(); } };
+
+let mMode='atm', mPool='cash';
+function nowLocal(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+function openM(mode){ mMode=mode; const atm=mode==='atm';
+  $('mTitle').textContent=atm?'Tarik tunai ATM (digital → tunai)':'Dana masuk (menambah anggaran)';
+  $('mAtm').style.display=atm?'block':'none'; $('mIn').style.display=atm?'none':'block';
+  ['mAmt','mFeeJ','mFeeR','mInAmt','mInNote'].forEach(i=>$(i).value=''); $('mInCur').value='JPY'; mPool='cash';
+  chips($('mInPool'),['Tunai','Digital'],()=>mPool==='cash'?'Tunai':'Digital',v=>{ mPool=v==='Tunai'?'cash':'digital'; mCalc(); },false);
+  $('mDt').value=nowLocal(); mCalc(); $('msheet').classList.add('on'); setTimeout(()=>$(atm?'mAmt':'mInAmt').focus(),50); }
+/* ATM: digital berkurang ¥tarik (kurs kartu) ; biaya = ¥ATM + Rp bank/kurs kartu → pengeluaran */
+function mCalc(){ const s=DB.settings, e=effRate(s);
+  if(mMode==='atm'){ const a=+$('mAmt').value||0, fj=+$('mFeeJ').value||0, fr=+$('mFeeR').value||0, feeJ=fj+fr/e;
+    $('mInfo').innerHTML=a?'Tunai bertambah <b>'+fJ(a)+'</b> · digital berkurang '+fJ(a+feeJ)+' ≈ <b>'+fR(a*e+fj*e+fr)+'</b>'+(feeJ?'<br>Biaya dicatat: '+fJ(feeJ)+' ('+fR(fj*e+fr)+')':''):'';
+  } else { const v=+$('mInAmt').value||0, c=$('mInCur').value, r=mPool==='digital'?e:s.rate, j=c==='JPY'?v:v/r;
+    $('mInfo').innerHTML=v?'Anggaran bertambah <b>'+fJ(j)+'</b> · '+fR(c==='IDR'?v:j*r)+' → pos '+(mPool==='cash'?'tunai':'digital')+'. Jatah hari-hari tersisa ikut naik.':''; } }
+['mAmt','mFeeJ','mFeeR','mInAmt'].forEach(i=>$(i).oninput=mCalc); $('mInCur').onchange=mCalc;
+$('atmBtn').onclick=()=>openM('atm'); $('inBtn').onclick=()=>openM('in');
+$('mClose').onclick=()=>$('msheet').classList.remove('on');
+$('msheet').onclick=e=>{ if(e.target.id==='msheet') $('msheet').classList.remove('on'); };
+$('mSave').onclick=()=>{ const s=DB.settings, e=effRate(s), dt=$('mDt').value||nowLocal(), id=Date.now().toString(36);
+  if(mMode==='atm'){ const a=Math.round(+$('mAmt').value), fj=+$('mFeeJ').value||0, fr=+$('mFeeR').value||0;
+    if(!(a>0)){ toast('Isi jumlah ditarik'); return; }
+    const x={id:'a'+id,dt,date:dt.slice(0,10),amount_jpy:a,from:'digital',to:'cash',rate:e,fee_atm_jpy:fj,fee_bank_idr:fr};
+    if(fj||fr){ const t={id:'f'+id,dt,date:dt.slice(0,10),amount_jpy:Math.round((fj+fr/e)*100)/100,fx_rate:e,fee_jpy:0,category:'Kebutuhan',method:'Kartu',
+        note:'Biaya tarik tunai ATM',oneoff:true,xferId:x.id}; DB.tx.push(t); x.feeTxId=t.id; }
+    DB.xfer.push(x); if(persist()){ $('msheet').classList.remove('on'); toast('Tarik tunai '+fJ(a)); render(); }
+  } else { const v=+$('mInAmt').value, c=$('mInCur').value; if(!(v>0)){ toast('Isi jumlah'); return; }
+    const r=mPool==='digital'?e:s.rate, j=c==='JPY'?Math.round(v):Math.round(v/r*100)/100;
+    DB.inflow.push({id:'i'+id,dt,date:dt.slice(0,10),amount_jpy:j,orig_amt:c==='JPY'?null:v,orig_cur:c==='JPY'?null:c,pool:mPool,rate:r,note:$('mInNote').value.trim()});
+    if(persist()){ $('msheet').classList.remove('on'); toast('Dana masuk '+fJ(j)); render(); } } };
 
 function drawChart(D,t,rec,st){
   const N=D.length, W=340, H=150, pl=4, pr=4, pt=8, pb=22, cw=(W-pl-pr)/N, bw=Math.max(4,cw-4);
@@ -640,29 +721,42 @@ function drawChart(D,t,rec,st){
     g+='<rect class="hit" data-i="'+o.i+'" x="'+(pl+o.i*cw)+'" y="0" width="'+cw+'" height="'+H+'" fill="transparent"/>';
   });
   $('chart').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Pengeluaran harian vs rekomendasi">'+g+'</svg>';
-  const info=i=>{ const o=data[i]; $('chartInfo').innerHTML='<b>Hari '+(i+1)+' · '+o.d.city+'</b> ('+new Date(o.d.date+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})+') — '+
-    (i>t?'rencana '+fJ(o.rec):'realisasi '+fJ(o.act)+' / rek. '+fJ(o.rec))+' · statis '+fJ(sLine); };
+  const info=i=>{ const o=data[i], xc=spentBy(y=>y.date===o.d.date), br=CATS.filter(k=>xc[k]>0).map(k=>sw(k)+' '+k+' '+fJ(xc[k])).join(' · '); $('chartInfo').innerHTML='<b>Hari '+(i+1)+' · '+o.d.city+'</b> ('+new Date(o.d.date+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})+') — '+
+    (i>t?'rencana '+fJ(o.rec):'realisasi '+fJ(o.act)+' / rek. '+fJ(o.rec))+' · statis '+fJ(sLine)+(br?'<div style="margin-top:4px">'+br+'</div>':''); };
   $('chart').querySelectorAll('.hit').forEach(r=>{ r.onclick=()=>info(+r.dataset.i); r.onmouseenter=()=>info(+r.dataset.i); });
   info(t);
 }
 
 // ================= riwayat =================
 function renderList(){
-  const tx=[...DB.tx,...DB.xfer.map(x=>Object.assign({isX:true},x))].sort((a,b)=>b.dt.localeCompare(a.dt));
+  const tx=[...DB.tx,...DB.xfer.map(x=>Object.assign({isX:true},x)),...DB.inflow.map(x=>Object.assign({isIn:true},x))].sort((a,b)=>b.dt.localeCompare(a.dt));
+  const Dd=days();
   if(!tx.length){ $('txList').innerHTML='<div class="empty">Belum ada transaksi</div>'; return; }
   const D=days(); let html='', last='';
   tx.forEach(x=>{
-    if(x.date!==last){ last=x.date; const dd=DB.tx.filter(y=>y.date===x.date), i=dayDiff(D[0].date,x.date);
-      html+='<div class="day row"><span>'+new Date(x.date+'T00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})+((i>=0&&i<D.length)?' · '+D[i].city:'')+'</span><span>'+
-        fJ(sum(dd.map(y=>cost(y))))+' · '+fR(sum(dd.map(y=>cost(y)*y.fx_rate)))+'</span></div>'; }
-    if(x.isX){ html+='<div class="xf"><div>⇄ <b>Top-up Suica</b> <span class="sub">· tunai → Suica · '+x.dt.slice(11,16)+'</span></div><div class="amtR"><div>'+fJ(x.amount_jpy)+'</div><button class="del" data-xid="'+x.id+'">hapus</button></div></div>'; return; }
-    html+='<div class="tx"><div><b style="display:inline-flex;align-items:center;gap:6px">'+sw(x.category)+esc(x.category)+'</b> <span class="sub">· '+esc(x.method)+' · '+x.dt.slice(11,16)+(x.oneoff?' · sekali bayar':'')+'</span>'+
+    if(x.date!==last){ last=x.date; const dd=budgetTx().filter(y=>y.date===x.date), ds=DB.tx.filter(y=>y.sav&&y.date===x.date), i=dayDiff(D[0].date,x.date);
+      const xc=spentBy(y=>y.date===x.date), tot=sum(CATS.map(k=>xc[k])), inTrip=i>=0&&i<D.length, rd=inTrip?recAt(D,i).Dt:0, td=sum(DAILY.map(k=>xc[k]));
+      html+='<div class="day row"><span>'+new Date(x.date+'T00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})+(inTrip?' · '+D[i].city:'')+'</span><span>'+
+        fJ(tot)+' · '+fR(sum(dd.map(y=>cost(y)*y.fx_rate)))+'</span></div>';
+      if(tot>0){ const sc=Math.max(tot,rd)||1;
+        html+='<div class="seg" style="height:8px;margin-top:6px">'+CATS.filter(k=>xc[k]>0).map(k=>'<i style="width:'+(xc[k]/sc*100)+'%;background:'+COLOR[k]+'"></i>').join('')+'</div>'+
+          '<div class="sub" style="margin-top:4px;line-height:1.6">'+CATS.filter(k=>xc[k]>0).map(k=>sw(k)+' '+k+' '+fJ(xc[k])).join(' · ')+
+          (inTrip?'<br>harian '+fJ(td)+' / rek. '+fJ(rd)+(td>rd+0.5?' <span class="bad">▲ lewat '+fJ(td-rd)+'</span>':' <span class="good">✓</span>'):'')+'</div>'; }
+      if(ds.length) html+='<div class="sub" style="margin-top:2px">dari tabungan '+fJ(sum(ds.map(cost)))+' (di luar anggaran)</div>'; }
+    if(x.isX){ const atm=x.to==='cash';
+      html+='<div class="xf"><div>⇄ <b>'+(atm?'Tarik tunai ATM':'Top-up Suica')+'</b> <span class="sub">· '+(atm?'digital → tunai':'tunai → Suica')+' · '+x.dt.slice(11,16)+'</span>'+
+        (atm&&(x.fee_atm_jpy||x.fee_bank_idr)?'<div class="sub">biaya '+(x.fee_atm_jpy?fJ(x.fee_atm_jpy):'')+(x.fee_atm_jpy&&x.fee_bank_idr?' + ':'')+(x.fee_bank_idr?fR(x.fee_bank_idr):'')+'</div>':'')+
+        '</div><div class="amtR"><div>'+fJ(x.amount_jpy)+'</div>'+(atm?'<div>'+fR(x.amount_jpy*(x.rate||0))+'</div>':'')+'<button class="del" data-xid="'+x.id+'">hapus</button></div></div>'; return; }
+    if(x.isIn){ html+='<div class="xf"><div>＋ <b>Dana masuk</b> <span class="sub">· pos '+(x.pool==='cash'?'tunai':'digital')+' · '+x.dt.slice(11,16)+'</span>'+(x.note?'<div class="sub">'+esc(x.note)+'</div>':'')+
+        '</div><div class="amtR">'+(x.orig_cur?'<div class="sub">'+fmtCur(x.orig_amt,x.orig_cur)+'</div>':'')+'<div class="good">+'+fJ(x.amount_jpy)+'</div><button class="del" data-iid="'+x.id+'">hapus</button></div></div>'; return; }
+    html+='<div class="tx"><div><b style="display:inline-flex;align-items:center;gap:6px">'+sw(x.category)+esc(x.category)+'</b> <span class="sub">· '+esc(x.method)+' · '+x.dt.slice(11,16)+(x.oneoff?' · sekali bayar':'')+(x.sav?' · <span style="color:var(--acc)">dari tabungan</span>':'')+'</span>'+
       (x.note?'<div class="sub">'+esc(x.note)+'</div>':'')+'</div><div class="amtR">'+(x.orig_cur?'<div class="sub">'+fmtCur(x.orig_amt,x.orig_cur)+'</div>':'')+'<div>'+fJ(x.amount_jpy)+'</div><div>'+fR(cost(x)*x.fx_rate)+(x.fee_jpy?'<div class="sub">incl. biaya kartu</div>':'')+
       '</div><button class="del" data-id="'+x.id+'">hapus</button></div></div>';
   });
   $('txList').innerHTML=html;
   $('txList').querySelectorAll('.del').forEach(b=>b.onclick=()=>{
-    if(b.dataset.armed&&b.dataset.xid){ DB.xfer=DB.xfer.filter(x=>x.id!==b.dataset.xid); persist(); render(); toast('Top-up dihapus'); return; }
+    if(b.dataset.armed&&b.dataset.xid){ DB.xfer=DB.xfer.filter(x=>x.id!==b.dataset.xid); DB.tx=DB.tx.filter(t=>t.xferId!==b.dataset.xid); persist(); render(); toast('Dihapus'); return; }
+    if(b.dataset.armed&&b.dataset.iid){ DB.inflow=DB.inflow.filter(x=>x.id!==b.dataset.iid); persist(); render(); toast('Dana masuk dihapus'); return; }
     if(b.dataset.armed){ DB.tx=DB.tx.filter(x=>x.id!==b.dataset.id); DB.plan.forEach(it=>{ if(it.txId===b.dataset.id){ it.done=false; it.doneDate=null; it.txId=null; } }); persist(); render(); toast('Dihapus'); }
     else{ b.dataset.armed=1; b.textContent='ketuk lagi untuk hapus'; b.style.color='var(--bad)'; }
   });
@@ -751,9 +845,9 @@ function download(name,mime,text){ const a=document.createElement('a'); a.href=U
   document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); }
 $('expCsv').onclick=()=>{
   const D=days(), q=v=>'"'+String(v).replace(/"/g,'""')+'"';
-  const rows=[['transaction_datetime','transaction_date','city','category','payment_method','amount_jpy','fx_rate_idr_per_jpy','amount_idr','note','one_off','pool','card_fee_jpy','orig_amount','orig_currency']];
+  const rows=[['transaction_datetime','transaction_date','city','category','payment_method','amount_jpy','fx_rate_idr_per_jpy','amount_idr','note','one_off','pool','card_fee_jpy','orig_amount','orig_currency','from_savings']];
   [...DB.tx].sort((a,b)=>a.dt.localeCompare(b.dt)).forEach(x=>{ const i=dayDiff(D[0].date,x.date);
-    rows.push([x.dt,x.date,(i>=0&&i<D.length)?D[i].city:'',x.category,x.method,x.amount_jpy,x.fx_rate,Math.round(cost(x)*x.fx_rate),x.note,x.oneoff?1:0,poolOf(x.method),Math.round((x.fee_jpy||0)*100)/100,x.orig_amt||'',x.orig_cur||'JPY']); });
+    rows.push([x.dt,x.date,(i>=0&&i<D.length)?D[i].city:'',x.category,x.method,x.amount_jpy,x.fx_rate,Math.round(cost(x)*x.fx_rate),x.note,x.oneoff?1:0,poolOf(x.method),Math.round((x.fee_jpy||0)*100)/100,x.orig_amt||'',x.orig_cur||'JPY',x.sav?1:0]); });
   download('japan_tx_'+today()+'.csv','text/csv',rows.map(r=>r.map(q).join(',')).join('\n'));
 };
 $('expJson').onclick=()=>download('japan_backup_'+today()+'.json','application/json',JSON.stringify(DB,null,1));
@@ -763,6 +857,7 @@ $('impFile').onchange=async e=>{
   try{ const d=JSON.parse(await f.text()); if(!d.settings||!Array.isArray(d.tx)) throw new Error('format salah');
     const wasEmpty=!DB.tx.length, ids=new Set(DB.tx.map(x=>x.id)); let n=0;
     d.tx.forEach(x=>{ if(!ids.has(x.id)){ DB.tx.push(x); n++; } });
+    const iids=new Set(DB.inflow.map(x=>x.id)); (d.inflow||[]).forEach(x=>{ if(!iids.has(x.id)) DB.inflow.push(x); });
     const xids=new Set(DB.xfer.map(x=>x.id)); (d.xfer||[]).forEach(x=>{ if(!xids.has(x.id)) DB.xfer.push(x); });
     const pids=new Set(DB.plan.map(x=>x.id)); (d.plan||[]).forEach(x=>{ if(!pids.has(x.id)) DB.plan.push(x); });
     if(wasEmpty) DB.settings=Object.assign(defaults().settings,d.settings);
@@ -897,7 +992,7 @@ function viewWeek(D,t){
 function viewBuy(D,t){
   const N=D.length, R=DB.settings.rate, ref=D[t].date, buys=DB.plan.filter(it=>it.type==='Beli');
   const cnt=DB.plan.filter(it=>planCounts(it,ref)&&!it.done), tot=sum(cnt.map(it=>it.price));
-  const Sa=spentBy(()=>true), rem=DB.settings.budget-sum(CATS.map(k=>Sa[k]));
+  const Sa=spentBy(()=>true), rem=totB()-sum(CATS.map(k=>Sa[k]));
   const byK={}; CATS.forEach(k=>byK[k]=sum(cnt.filter(it=>it.category===k).map(it=>it.price)));
   const L=DB.settings.limits;
   let h='<div class="card"><div class="row"><div class="lbl">Rencana belanja dihitung</div><div class="sub">'+cnt.length+' item</div></div>'+
